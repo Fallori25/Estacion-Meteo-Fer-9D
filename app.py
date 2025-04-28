@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template_string
 from datetime import datetime
+import pytz
 
 app = Flask(__name__)
 
@@ -60,7 +61,8 @@ def update():
     datos["humedad"] = request.form.get("humedad", "-")
     datos["presion"] = request.form.get("presion", "-")
     datos["altitud"] = request.form.get("altitud", "-")
-    datos["fecha"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+    argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+    datos["fecha"] = datetime.now(argentina).strftime("%d/%m/%Y %H:%M")
     return "OK"
 
 if __name__ == "__main__":
