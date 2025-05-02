@@ -53,7 +53,8 @@ canvas { max-width: 100%; margin: 20px auto; }
   <h2>Gráfico de Presión</h2>
   <canvas id="graficoPres"></canvas>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
   <script>
     let gTemp, gHum, gPres;
 
@@ -63,22 +64,26 @@ canvas { max-width: 100%; margin: 20px auto; }
         .then(data => {
           // Temperatura
           if (!gTemp) {
-           gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
-  type: 'line',
-  data: {
-    labels: data.labels,
-    datasets: [{
-      label: 'Temperatura (°C)',
-      data: data.temperaturas,
-      borderColor: 'red',
-      fill: false,
-      tension: 0.4  // Suaviza la curva
-    }]
-  },
-  options: {
-    responsive: true
-  }
-});
+          gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
+           type: 'line',
+           data: {
+             labels: data.labels,
+             datasets: [{
+               label: 'Temperatura (°C)',
+               data: data.temperaturas,
+               borderColor: 'red',
+               backgroundColor: 'transparent',
+               tension: 0.4
+             }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { display: true },
+              y: { display: true }
+            }
+          }
+        });
 
           } else {
             gTemp.data.labels = data.labels;
