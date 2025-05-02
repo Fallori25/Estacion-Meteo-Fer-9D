@@ -9,7 +9,7 @@ datos = {
     "temperatura": "-",
     "humedad": "-",
     "presion": "-",
-    "altitud": "-",
+#    "altitud": "-",
     "fecha": "-"
 }
 
@@ -44,7 +44,7 @@ canvas { max-width: 100%; margin: 20px auto; }
   <div class='card'><div class='dato'>Temperatura: {{ temperatura }} &#8451;</div></div>
   <div class='card'><div class='dato'>Humedad: {{ humedad }} %</div></div>
   <div class='card'><div class='dato'>Presión: {{ presion }} hPa</div></div>
-  <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
+ # <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
 
   <h2>Gráfico de Temperatura</h2>
   <canvas id="graficoTemp"></canvas>
@@ -138,7 +138,7 @@ def home():
                                   temperatura=datos["temperatura"],
                                   humedad=datos["humedad"],
                                   presion=datos["presion"],
-                                  altitud=datos["altitud"],
+                                  #altitud=datos["altitud"],
                                   fecha=datos["fecha"])
 
 @app.route("/update", methods=["POST"])
@@ -148,7 +148,7 @@ def update():
     datos["temperatura"] = request.form.get("temperatura", "-")
     datos["humedad"] = request.form.get("humedad", "-")
     datos["presion"] = request.form.get("presion", "-")
-    datos["altitud"] = request.form.get("altitud", "-")
+   #datos["altitud"] = request.form.get("altitud", "-")
     datos["fecha"] = datetime.now(argentina).strftime("%d/%m/%Y %H:%M")
 
     # Guardar en historial
