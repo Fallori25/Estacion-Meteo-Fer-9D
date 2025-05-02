@@ -63,19 +63,23 @@ canvas { max-width: 100%; margin: 20px auto; }
         .then(data => {
           // Temperatura
           if (!gTemp) {
-            gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: 'Temperatura (°C)',
-                  data: data.temperaturas,
-                  borderColor: 'red',
-                  fill: false
-                  tension: 0.4
-                }]
-              }
-            });
+           gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: data.labels,
+    datasets: [{
+      label: 'Temperatura (°C)',
+      data: data.temperaturas,
+      borderColor: 'red',
+      fill: false,
+      tension: 0.4  // Suaviza la curva
+    }]
+  },
+  options: {
+    responsive: true
+  }
+});
+
           } else {
             gTemp.data.labels = data.labels;
             gTemp.data.datasets[0].data = data.temperaturas;
