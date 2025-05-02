@@ -1,10 +1,10 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template_string, jsonify
 from datetime import datetime
 import pytz
 
 app = Flask(__name__)
 
-# Variables para guardar los datos
+# Variables para guardar los datos actuales
 datos = {
     "temperatura": "-",
     "humedad": "-",
@@ -13,7 +13,10 @@ datos = {
     "fecha": "-"
 }
 
-# HTML base (igual al de tu ESP32)
+# Historial de las últimas 10 temperaturas
+historial = []
+
+# HTML de la página
 html_template = """
 <html>
 <head>
@@ -42,13 +45,43 @@ h1 { color: #2c3e50; font-size: 2em; margin: 0; }
   <div class='card'><div class='dato'>Presión: {{ presion }} hPa</div></div>
   <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
 
+  <h2>Gráfico de Temperatura</h2>
+  <canvas id="graficoTemp" width="400" height="200"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+  fetch('/api/datos')
+    .then(response => response.json())
+    .then(data => {
+      const ctx = document.getElementById('graficoTemp').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: 'Temperatura (°C)',
+            data: data.values,
+            borderWidth: 2,
+            borderColor: 'red',
+            fill: false
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: false
+            }
+          }
+        }
+      });
+    });
+  </script>
 </body>
 </html>
 """
 
 @app.route("/", methods=["GET"])
 def home():
-    return render_template_string(html_template, 
+    return render_template_string(html_template,
                                   temperatura=datos["temperatura"],
                                   humedad=datos["humedad"],
                                   presion=datos["presion"],
@@ -57,13 +90,34 @@ def home():
 
 @app.route("/update", methods=["POST"])
 def update():
+    argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+
     datos["temperatura"] = request.form.get("temperatura", "-")
     datos["humedad"] = request.form.get("humedad", "-")
     datos["presion"] = request.form.get("presion", "-")
     datos["altitud"] = request.form.get("altitud", "-")
-    argentina = pytz.timezone('America/Argentina/Buenos_Aires')
     datos["fecha"] = datetime.now(argentina).strftime("%d/%m/%Y %H:%M")
+
+    # Guardar en historial
+    try:
+        registro = {
+            "hora": datetime.now(argentina).strftime("%H:%M"),
+            "temperatura": float(datos["temperatura"])
+        }
+        historial.append(registro)
+        if len(historial) > 10:
+            historial.pop(0)
+    except:
+        pass  # en caso de que la temperatura no sea convertible a float
+
     return "OK"
+
+@app.route("/api/datos", methods=["GET"])
+def api_datos():
+    etiquetas = [r["hora"] for r in historial]
+    valores = [r["temperatura"] for r in historial]
+    return jsonify({"labels": etiquetas, "values": valores})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
