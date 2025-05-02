@@ -44,7 +44,7 @@ canvas { max-width: 100%; margin: 20px auto; }
   <div class='card'><div class='dato'>Temperatura: {{ temperatura }} &#8451;</div></div>
   <div class='card'><div class='dato'>Humedad: {{ humedad }} %</div></div>
   <div class='card'><div class='dato'>Presión: {{ presion }} hPa</div></div>
- # <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
+#  <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
 
   <h2>Gráfico de Temperatura</h2>
   <canvas id="graficoTemp"></canvas>
