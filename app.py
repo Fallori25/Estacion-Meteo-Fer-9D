@@ -8,7 +8,6 @@ import csv
 app = Flask(__name__)
 CSV_FILE = "datos.csv"
 
-# HTML con 3 gráficos
 html_template = """
 <html>
 <head>
@@ -24,7 +23,7 @@ canvas { max-width: 100%; margin-top: 20px; }
 <h1>Monitor Climático de Fer</h1>
 <div class='card'>Temperatura: {{ temperatura }} °C</div>
 <div class='card'>Humedad: {{ humedad }} %</div>
-<div class='card'>Presión (ajustada): {{ presion }} hPa</div>
+<div class='card'>Presión: {{ presion }} hPa</div>
 <div class='card'>Altitud: {{ altitud }} m</div>
 <div class='card'>Última actualización: {{ fecha }}</div>
 
@@ -83,7 +82,7 @@ def update():
         "hora": ahora.strftime("%H:%M"),
         "temperatura": float(request.form.get("temperatura", 0)),
         "humedad": float(request.form.get("humedad", 0)),
-        "presion": float(request.form.get("presion", 0)),  
+        "presion": float(request.form.get("presion", 0)),  # YA NO se suma 60
         "altitud": float(request.form.get("altitud", 0))
     }
 
@@ -103,7 +102,14 @@ def api_datos():
         return jsonify({"labels": [], "temperaturas": [], "humedades": [], "presiones": []})
 
     ultimas_48h = df[df["datetime"] > datetime.now() - timedelta(hours=48)]
+
+    # Forzar conversión a numérico
+    for col in ["temperatura", "humedad", "presion"]:
+        ultimas_48h[col] = pd.to_numeric(ultimas_48h[col], errors="coerce")
+
+    # Agrupar cada 10 minutos
     cada_10min = ultimas_48h.resample("10min", on="datetime").mean().dropna()
+
     etiquetas = cada_10min.index.strftime("%d %H:%M").tolist()
     return jsonify({
         "labels": etiquetas,
@@ -137,5 +143,6 @@ def cargar_csv():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
 
