@@ -16,7 +16,7 @@ datos = {
 # Historial de las últimas 10 temperaturas
 historial = []
 
-# HTML de la página
+# HTML de la página con gráfico que se actualiza automáticamente
 html_template = """
 <html>
 <head>
@@ -49,31 +49,44 @@ h1 { color: #2c3e50; font-size: 2em; margin: 0; }
   <canvas id="graficoTemp" width="400" height="200"></canvas>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-  fetch('/api/datos')
-    .then(response => response.json())
-    .then(data => {
-      const ctx = document.getElementById('graficoTemp').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: data.labels,
-          datasets: [{
-            label: 'Temperatura (°C)',
-            data: data.values,
-            borderWidth: 2,
-            borderColor: 'red',
-            fill: false
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: false
-            }
+    let grafico;
+
+    function cargarDatos() {
+      fetch('/api/datos')
+        .then(response => response.json())
+        .then(data => {
+          if (!grafico) {
+            const ctx = document.getElementById('graficoTemp').getContext('2d');
+            grafico = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Temperatura (°C)',
+                  data: data.values,
+                  borderWidth: 2,
+                  borderColor: 'red',
+                  fill: false
+                }]
+              },
+              options: {
+                scales: {
+                  y: {
+                    beginAtZero: false
+                  }
+                }
+              }
+            });
+          } else {
+            grafico.data.labels = data.labels;
+            grafico.data.datasets[0].data = data.values;
+            grafico.update();
           }
-        }
-      });
-    });
+        });
+    }
+
+    cargarDatos();
+    setInterval(cargarDatos, 60000); // actualizar cada 60 segundos
   </script>
 </body>
 </html>
@@ -108,7 +121,7 @@ def update():
         if len(historial) > 10:
             historial.pop(0)
     except:
-        pass  # en caso de que la temperatura no sea convertible a float
+        pass
 
     return "OK"
 
@@ -120,4 +133,3 @@ def api_datos():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
