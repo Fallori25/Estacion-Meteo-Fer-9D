@@ -1,12 +1,18 @@
 from flask import Flask, request, render_template_string, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
-import pandas as pd
-import os
-import csv
 
 app = Flask(__name__)
-CSV_FILE = "datos.csv"
+
+datos = {
+    "temperatura": "-",
+    "humedad": "-",
+    "presion": "-",
+    "altitud": "-",
+    "fecha": "-"
+}
+
+historial = []
 
 html_template = """
 <html>
@@ -70,93 +76,49 @@ setInterval(cargar, 60000);
 
 @app.route("/", methods=["GET"])
 def home():
-    ultima = leer_ultimo_valor()
-    return render_template_string(html_template, **ultima)
+    return render_template_string(html_template, **datos)
 
- app.py con borrado automático del CSV (temporal)
-Solo cambia el endpoint /update:
-
-python
-Copiar
-Editar
 @app.route("/update", methods=["POST"])
 def update():
     argentina = pytz.timezone('America/Argentina/Buenos_Aires')
     ahora = datetime.now(argentina)
 
-    # 🔥 BORRA el archivo cada vez que se recibe un nuevo dato
-    if os.path.exists(CSV_FILE):
-        os.remove(CSV_FILE)
+    datos["temperatura"] = request.form.get("temperatura", "-")
+    datos["humedad"] = request.form.get("humedad", "-")
+    datos["presion"] = request.form.get("presion", "-")
+    datos["altitud"] = request.form.get("altitud", "-")
+    datos["fecha"] = ahora.strftime("%d/%m/%Y %H:%M")
 
-    fila = {
-        "fecha": ahora.strftime("%d/%m/%Y"),
-        "hora": ahora.strftime("%H:%M"),
-        "temperatura": float(request.form.get("temperatura", 0)),
-        "humedad": float(request.form.get("humedad", 0)),
-        "presion": float(request.form.get("presion", 0)),
-        "altitud": float(request.form.get("altitud", 0))
-    }
-
-    archivo_nuevo = not os.path.exists(CSV_FILE)
-    with open(CSV_FILE, mode="a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fila.keys())
-        if archivo_nuevo:
-            writer.writeheader()
-        writer.writerow(fila)
+    try:
+        historial.append({
+            "hora": ahora.strftime("%H:%M"),
+            "temperatura": float(datos["temperatura"]),
+            "humedad": float(datos["humedad"]),
+            "presion": float(datos["presion"])
+        })
+        if len(historial) > 10:
+            historial.pop(0)
+    except:
+        pass
 
     return "OK"
 
 @app.route("/api/datos", methods=["GET"])
 def api_datos():
-    df = cargar_csv()
-    if df.empty:
-        return jsonify({"labels": [], "temperaturas": [], "humedades": [], "presiones": []})
-
-    ultimas_48h = df[df["datetime"] > datetime.now() - timedelta(hours=48)]
-
-    # Forzar conversión a numérico
-    for col in ["temperatura", "humedad", "presion"]:
-        ultimas_48h[col] = pd.to_numeric(ultimas_48h[col], errors="coerce")
-
-    # Agrupar cada 10 minutos
-    cada_10min = ultimas_48h.resample("10min", on="datetime").mean().dropna()
-
-    etiquetas = cada_10min.index.strftime("%d %H:%M").tolist()
+    etiquetas = [r["hora"] for r in historial]
+    temperaturas = [r["temperatura"] for r in historial]
+    humedades = [r["humedad"] for r in historial]
+    presiones = [r["presion"] for r in historial]
     return jsonify({
         "labels": etiquetas,
-        "temperaturas": cada_10min["temperatura"].tolist(),
-        "humedades": cada_10min["humedad"].tolist(),
-        "presiones": cada_10min["presion"].tolist()
+        "temperaturas": temperaturas,
+        "humedades": humedades,
+        "presiones": presiones
     })
 
-def leer_ultimo_valor():
-    df = cargar_csv()
-    if df.empty:
-        return {"temperatura": "-", "humedad": "-", "presion": "-", "altitud": "-", "fecha": "-"}
-    ultimo = df.iloc[-1]
-    return {
-        "temperatura": round(ultimo["temperatura"], 1),
-        "humedad": round(ultimo["humedad"], 1),
-        "presion": round(ultimo["presion"], 1),
-        "altitud": round(ultimo["altitud"], 1),
-        "fecha": f'{ultimo["fecha"]} {ultimo["hora"]}'
-    }
-
-def cargar_csv():
-    if not os.path.exists(CSV_FILE):
-        return pd.DataFrame()
-    df = pd.read_csv(CSV_FILE)
-    try:
-        df["datetime"] = pd.to_datetime(df["fecha"] + " " + df["hora"], format="%d/%m/%Y %H:%M")
-        return df
-    except:
-        return pd.DataFrame()
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
 
 
 
