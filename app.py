@@ -4,7 +4,7 @@ import pytz
 
 app = Flask(__name__)
 
-# Variables para guardar los datos actuales
+# Variables actuales
 datos = {
     "temperatura": "-",
     "humedad": "-",
@@ -13,10 +13,10 @@ datos = {
     "fecha": "-"
 }
 
-# Historial de las últimas 10 temperaturas
+# Historial (últimos 10)
 historial = []
 
-# HTML de la página con gráfico que se actualiza automáticamente
+# HTML con 3 gráficos separados
 html_template = """
 <html>
 <head>
@@ -30,6 +30,7 @@ body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: ce
 h1 { color: #2c3e50; font-size: 2em; margin: 0; }
 .card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 400px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
 .dato { font-size: 2em; font-weight: bold; }
+canvas { max-width: 100%; margin: 20px auto; }
 </style>
 </head>
 <body>
@@ -46,47 +47,86 @@ h1 { color: #2c3e50; font-size: 2em; margin: 0; }
   <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
 
   <h2>Gráfico de Temperatura</h2>
-  <canvas id="graficoTemp" width="400" height="200"></canvas>
+  <canvas id="graficoTemp"></canvas>
+
+  <h2>Gráfico de Humedad</h2>
+  <canvas id="graficoHum"></canvas>
+
+  <h2>Gráfico de Presión</h2>
+  <canvas id="graficoPres"></canvas>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    let grafico;
+    let gTemp, gHum, gPres;
 
-    function cargarDatos() {
+    function cargarGraficos() {
       fetch('/api/datos')
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-          if (!grafico) {
-            const ctx = document.getElementById('graficoTemp').getContext('2d');
-            grafico = new Chart(ctx, {
+          // Temperatura
+          if (!gTemp) {
+            gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
               type: 'line',
               data: {
                 labels: data.labels,
                 datasets: [{
                   label: 'Temperatura (°C)',
-                  data: data.values,
-                  borderWidth: 2,
+                  data: data.temperaturas,
                   borderColor: 'red',
                   fill: false
                 }]
-              },
-              options: {
-                scales: {
-                  y: {
-                    beginAtZero: false
-                  }
-                }
               }
             });
           } else {
-            grafico.data.labels = data.labels;
-            grafico.data.datasets[0].data = data.values;
-            grafico.update();
+            gTemp.data.labels = data.labels;
+            gTemp.data.datasets[0].data = data.temperaturas;
+            gTemp.update();
+          }
+
+          // Humedad
+          if (!gHum) {
+            gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
+              type: 'line',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Humedad (%)',
+                  data: data.humedades,
+                  borderColor: 'blue',
+                  fill: false
+                }]
+              }
+            });
+          } else {
+            gHum.data.labels = data.labels;
+            gHum.data.datasets[0].data = data.humedades;
+            gHum.update();
+          }
+
+          // Presión
+          if (!gPres) {
+            gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
+              type: 'line',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Presión (hPa)',
+                  data: data.presiones,
+                  borderColor: 'green',
+                  fill: false
+                }]
+              }
+            });
+          } else {
+            gPres.data.labels = data.labels;
+            gPres.data.datasets[0].data = data.presiones;
+            gPres.update();
           }
         });
     }
 
-    cargarDatos();
-    setInterval(cargarDatos, 60000); // actualizar cada 60 segundos
+    cargarGraficos();
+    setInterval(cargarGraficos, 60000);
   </script>
 </body>
 </html>
@@ -115,7 +155,9 @@ def update():
     try:
         registro = {
             "hora": datetime.now(argentina).strftime("%H:%M"),
-            "temperatura": float(datos["temperatura"])
+            "temperatura": float(datos["temperatura"]),
+            "humedad": float(datos["humedad"]),
+            "presion": float(datos["presion"])
         }
         historial.append(registro)
         if len(historial) > 10:
@@ -128,8 +170,16 @@ def update():
 @app.route("/api/datos", methods=["GET"])
 def api_datos():
     etiquetas = [r["hora"] for r in historial]
-    valores = [r["temperatura"] for r in historial]
-    return jsonify({"labels": etiquetas, "values": valores})
+    temperaturas = [r["temperatura"] for r in historial]
+    humedades = [r["humedad"] for r in historial]
+    presiones = [r["presion"] for r in historial]
+    return jsonify({
+        "labels": etiquetas,
+        "temperaturas": temperaturas,
+        "humedades": humedades,
+        "presiones": presiones
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
