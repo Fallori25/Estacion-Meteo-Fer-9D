@@ -160,7 +160,7 @@ def update():
             "presion": float(datos["presion"])
         }
         historial.append(registro)
-        if len(historial) > 120:
+        if len(historial) > 30:
             historial.pop(0)
     except:
         pass
