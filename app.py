@@ -72,6 +72,7 @@ canvas { max-width: 100%; margin: 20px auto; }
                   data: data.temperaturas,
                   borderColor: 'red',
                   fill: false
+                  tension: 0.4
                 }]
               }
             });
@@ -92,6 +93,7 @@ canvas { max-width: 100%; margin: 20px auto; }
                   data: data.humedades,
                   borderColor: 'blue',
                   fill: false
+                  tension: 0.4
                 }]
               }
             });
@@ -112,6 +114,7 @@ canvas { max-width: 100%; margin: 20px auto; }
                   data: data.presiones,
                   borderColor: 'green',
                   fill: false
+                  tension: 0.4
                 }]
               }
             });
@@ -155,7 +158,7 @@ def update():
             "presion": float(datos["presion"])
         }
         historial.append(registro)
-        if len(historial) > 30:
+        if len(historial) > 120:
             historial.pop(0)
     except:
         pass
