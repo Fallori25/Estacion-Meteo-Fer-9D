@@ -55,89 +55,106 @@ canvas { max-width: 100%; margin: 20px auto; }
 
  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
-  <script>
-    let gTemp, gHum, gPres;
+ <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
-    function cargarGraficos() {
-      fetch('/api/datos')
-        .then(r => r.json())
-        .then(data => {
-          // Temperatura
-          if (!gTemp) {
+<script>
+  let gTemp, gHum, gPres;
+
+  function cargarGraficos() {
+    fetch('/api/datos')
+      .then(r => r.json())
+      .then(data => {
+
+        // Temperatura
+        if (!gTemp) {
           gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
-           type: 'line',
-           data: {
-             labels: data.labels,
-             datasets: [{
-               label: 'Temperatura (°C)',
-               data: data.temperaturas,
-               borderColor: 'red',
-               backgroundColor: 'transparent',
-               tension: 0.4
-             }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              x: { display: true },
-              y: { display: true }
+            type: 'line',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'Temperatura (°C)',
+                data: data.temperaturas,
+                borderColor: 'red',
+                backgroundColor: 'transparent',
+                tension: 0.4
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: { display: true },
+                y: { display: true }
+              }
             }
-          }
-        });
+          });
+        } else {
+          gTemp.data.labels = data.labels;
+          gTemp.data.datasets[0].data = data.temperaturas;
+          gTemp.update();
+        }
 
-          } else {
-            gTemp.data.labels = data.labels;
-            gTemp.data.datasets[0].data = data.temperaturas;
-            gTemp.update();
-          }
-
-          // Humedad
-          if (!gHum) {
-            gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: 'Humedad (%)',
-                  data: data.humedades,
-                  borderColor: 'blue',
-                  fill: false
-                  tension: 0.4
-                }]
+        // Humedad
+        if (!gHum) {
+          gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'Humedad (%)',
+                data: data.humedades,
+                borderColor: 'blue',
+                backgroundColor: 'transparent',
+                tension: 0.4
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: { display: true },
+                y: { display: true }
               }
-            });
-          } else {
-            gHum.data.labels = data.labels;
-            gHum.data.datasets[0].data = data.humedades;
-            gHum.update();
-          }
+            }
+          });
+        } else {
+          gHum.data.labels = data.labels;
+          gHum.data.datasets[0].data = data.humedades;
+          gHum.update();
+        }
 
-          // Presión
-          if (!gPres) {
-            gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: 'Presión (hPa)',
-                  data: data.presiones,
-                  borderColor: 'green',
-                  fill: false
-                  tension: 0.4
-                }]
+        // Presión
+        if (!gPres) {
+          gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'Presión (hPa)',
+                data: data.presiones,
+                borderColor: 'green',
+                backgroundColor: 'transparent',
+                tension: 0.4
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: { display: true },
+                y: { display: true }
               }
-            });
-          } else {
-            gPres.data.labels = data.labels;
-            gPres.data.datasets[0].data = data.presiones;
-            gPres.update();
-          }
-        });
-    }
+            }
+          });
+        } else {
+          gPres.data.labels = data.labels;
+          gPres.data.datasets[0].data = data.presiones;
+          gPres.update();
+        }
+      });
+  }
 
-    cargarGraficos();
-    setInterval(cargarGraficos, 60000);
-  </script>
+  cargarGraficos();
+  setInterval(cargarGraficos, 60000);
+</script>
+
 </body>
 </html>
 """
