@@ -73,16 +73,27 @@ def home():
     ultima = leer_ultimo_valor()
     return render_template_string(html_template, **ultima)
 
+ app.py con borrado automático del CSV (temporal)
+Solo cambia el endpoint /update:
+
+python
+Copiar
+Editar
 @app.route("/update", methods=["POST"])
 def update():
     argentina = pytz.timezone('America/Argentina/Buenos_Aires')
     ahora = datetime.now(argentina)
+
+    # 🔥 BORRA el archivo cada vez que se recibe un nuevo dato
+    if os.path.exists(CSV_FILE):
+        os.remove(CSV_FILE)
+
     fila = {
         "fecha": ahora.strftime("%d/%m/%Y"),
         "hora": ahora.strftime("%H:%M"),
         "temperatura": float(request.form.get("temperatura", 0)),
         "humedad": float(request.form.get("humedad", 0)),
-        "presion": float(request.form.get("presion", 0)),  # YA NO se suma 60
+        "presion": float(request.form.get("presion", 0)),
         "altitud": float(request.form.get("altitud", 0))
     }
 
