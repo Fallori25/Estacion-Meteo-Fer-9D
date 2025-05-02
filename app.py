@@ -1,185 +1,141 @@
 from flask import Flask, request, render_template_string, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
+import pandas as pd
+import os
+import csv
 
 app = Flask(__name__)
+CSV_FILE = "datos.csv"
 
-# Variables actuales
-datos = {
-    "temperatura": "-",
-    "humedad": "-",
-    "presion": "-",
-    "altitud": "-",
-    "fecha": "-"
-}
-
-# Historial (últimos 10)
-historial = []
-
-# HTML con 3 gráficos separados
+# HTML con 3 gráficos
 html_template = """
 <html>
 <head>
-<title>Monitor Climatico de Fer 9D</title>
+<title>Estación Meteo Fer</title>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<meta http-equiv='refresh' content='60'>
 <style>
-body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: center; padding: 20px; margin: 0; }
-.header { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
-.mini-card { background-color: red; color: white; padding: 10px 15px; border-radius: 10px; font-size: 1em; font-weight: bold; }
-h1 { color: #2c3e50; font-size: 2em; margin: 0; }
-.card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 400px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
-.dato { font-size: 2em; font-weight: bold; }
-canvas { max-width: 100%; margin: 20px auto; }
+body { font-family: Arial; background-color: #FFB6C1; text-align: center; padding: 20px; }
+.card { background: #c7ecee; padding: 15px; margin: 10px auto; border-radius: 20px; max-width: 400px; }
+canvas { max-width: 100%; margin-top: 20px; }
 </style>
 </head>
 <body>
-  <div class='header'>
-    <div class='mini-card'>San Miguel de Tucumán</div>
-    <div class='mini-card'>{{ fecha }}</div>
-  </div>
+<h1>Monitor Climático de Fer</h1>
+<div class='card'>Temperatura: {{ temperatura }} °C</div>
+<div class='card'>Humedad: {{ humedad }} %</div>
+<div class='card'>Presión (ajustada): {{ presion }} hPa</div>
+<div class='card'>Altitud: {{ altitud }} m</div>
+<div class='card'>Última actualización: {{ fecha }}</div>
 
-  <h1>Monitor Climatico de Fer 9D</h1>
+<h2>Gráfico de Temperatura</h2>
+<canvas id="graficoTemp"></canvas>
+<h2>Gráfico de Humedad</h2>
+<canvas id="graficoHum"></canvas>
+<h2>Gráfico de Presión</h2>
+<canvas id="graficoPres"></canvas>
 
-  <div class='card'><div class='dato'>Temperatura: {{ temperatura }} &#8451;</div></div>
-  <div class='card'><div class='dato'>Humedad: {{ humedad }} %</div></div>
-  <div class='card'><div class='dato'>Presión: {{ presion }} hPa</div></div>
-  <div class='card'><div class='dato'>Altitud: {{ altitud }} m</div></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let gTemp, gHum, gPres;
 
-  <h2>Gráfico de Temperatura</h2>
-  <canvas id="graficoTemp"></canvas>
+function cargar() {
+  fetch('/api/datos')
+    .then(r => r.json())
+    .then(data => {
+      const opts = { responsive: true, scales: { y: { beginAtZero: false } } };
+      if (!gTemp) {
+        gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
+          type: 'line', data: { labels: data.labels, datasets: [{
+            label: '°C', data: data.temperaturas, borderColor: 'red', fill: false }] }, options: opts });
+        gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
+          type: 'line', data: { labels: data.labels, datasets: [{
+            label: '% Humedad', data: data.humedades, borderColor: 'blue', fill: false }] }, options: opts });
+        gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
+          type: 'line', data: { labels: data.labels, datasets: [{
+            label: 'hPa', data: data.presiones, borderColor: 'green', fill: false }] }, options: opts });
+      } else {
+        gTemp.data.labels = data.labels; gTemp.data.datasets[0].data = data.temperaturas; gTemp.update();
+        gHum.data.labels = data.labels; gHum.data.datasets[0].data = data.humedades; gHum.update();
+        gPres.data.labels = data.labels; gPres.data.datasets[0].data = data.presiones; gPres.update();
+      }
+    });
+}
 
-  <h2>Gráfico de Humedad</h2>
-  <canvas id="graficoHum"></canvas>
-
-  <h2>Gráfico de Presión</h2>
-  <canvas id="graficoPres"></canvas>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    let gTemp, gHum, gPres;
-
-    function cargarGraficos() {
-      fetch('/api/datos')
-        .then(r => r.json())
-        .then(data => {
-          // Temperatura
-          if (!gTemp) {
-            gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: 'Temperatura (°C)',
-                  data: data.temperaturas,
-                  borderColor: 'red',
-                  fill: false
-                }]
-              }
-            });
-          } else {
-            gTemp.data.labels = data.labels;
-            gTemp.data.datasets[0].data = data.temperaturas;
-            gTemp.update();
-          }
-
-          // Humedad
-          if (!gHum) {
-            gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: 'Humedad (%)',
-                  data: data.humedades,
-                  borderColor: 'blue',
-                  fill: false
-                }]
-              }
-            });
-          } else {
-            gHum.data.labels = data.labels;
-            gHum.data.datasets[0].data = data.humedades;
-            gHum.update();
-          }
-
-          // Presión
-          if (!gPres) {
-            gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: 'Presión (hPa)',
-                  data: data.presiones,
-                  borderColor: 'green',
-                  fill: false
-                }]
-              }
-            });
-          } else {
-            gPres.data.labels = data.labels;
-            gPres.data.datasets[0].data = data.presiones;
-            gPres.update();
-          }
-        });
-    }
-
-    cargarGraficos();
-    setInterval(cargarGraficos, 60000);
-  </script>
+cargar();
+setInterval(cargar, 60000);
+</script>
 </body>
 </html>
 """
 
 @app.route("/", methods=["GET"])
 def home():
-    return render_template_string(html_template,
-                                  temperatura=datos["temperatura"],
-                                  humedad=datos["humedad"],
-                                  presion=datos["presion"],
-                                  altitud=datos["altitud"],
-                                  fecha=datos["fecha"])
+    ultima = leer_ultimo_valor()
+    return render_template_string(html_template, **ultima)
 
 @app.route("/update", methods=["POST"])
 def update():
     argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+    ahora = datetime.now(argentina)
+    fila = {
+        "fecha": ahora.strftime("%d/%m/%Y"),
+        "hora": ahora.strftime("%H:%M"),
+        "temperatura": float(request.form.get("temperatura", 0)),
+        "humedad": float(request.form.get("humedad", 0)),
+        "presion": float(request.form.get("presion", 0)),  
+        "altitud": float(request.form.get("altitud", 0))
+    }
 
-    datos["temperatura"] = request.form.get("temperatura", "-")
-    datos["humedad"] = request.form.get("humedad", "-")
-    datos["presion"] = request.form.get("presion", "-")
-    datos["altitud"] = request.form.get("altitud", "-")
-    datos["fecha"] = datetime.now(argentina).strftime("%d/%m/%Y %H:%M")
-
-    # Guardar en historial
-    try:
-        registro = {
-            "hora": datetime.now(argentina).strftime("%H:%M"),
-            "temperatura": float(datos["temperatura"]),
-            "humedad": float(datos["humedad"]),
-            "presion": float(datos["presion"])
-        }
-        historial.append(registro)
-        if len(historial) > 10:
-            historial.pop(0)
-    except:
-        pass
+    archivo_nuevo = not os.path.exists(CSV_FILE)
+    with open(CSV_FILE, mode="a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fila.keys())
+        if archivo_nuevo:
+            writer.writeheader()
+        writer.writerow(fila)
 
     return "OK"
 
 @app.route("/api/datos", methods=["GET"])
 def api_datos():
-    etiquetas = [r["hora"] for r in historial]
-    temperaturas = [r["temperatura"] for r in historial]
-    humedades = [r["humedad"] for r in historial]
-    presiones = [r["presion"] for r in historial]
+    df = cargar_csv()
+    if df.empty:
+        return jsonify({"labels": [], "temperaturas": [], "humedades": [], "presiones": []})
+
+    ultimas_48h = df[df["datetime"] > datetime.now() - timedelta(hours=48)]
+    cada_10min = ultimas_48h.resample("10min", on="datetime").mean().dropna()
+    etiquetas = cada_10min.index.strftime("%d %H:%M").tolist()
     return jsonify({
         "labels": etiquetas,
-        "temperaturas": temperaturas,
-        "humedades": humedades,
-        "presiones": presiones
+        "temperaturas": cada_10min["temperatura"].tolist(),
+        "humedades": cada_10min["humedad"].tolist(),
+        "presiones": cada_10min["presion"].tolist()
     })
+
+def leer_ultimo_valor():
+    df = cargar_csv()
+    if df.empty:
+        return {"temperatura": "-", "humedad": "-", "presion": "-", "altitud": "-", "fecha": "-"}
+    ultimo = df.iloc[-1]
+    return {
+        "temperatura": round(ultimo["temperatura"], 1),
+        "humedad": round(ultimo["humedad"], 1),
+        "presion": round(ultimo["presion"], 1),
+        "altitud": round(ultimo["altitud"], 1),
+        "fecha": f'{ultimo["fecha"]} {ultimo["hora"]}'
+    }
+
+def cargar_csv():
+    if not os.path.exists(CSV_FILE):
+        return pd.DataFrame()
+    df = pd.read_csv(CSV_FILE)
+    try:
+        df["datetime"] = pd.to_datetime(df["fecha"] + " " + df["hora"], format="%d/%m/%Y %H:%M")
+        return df
+    except:
+        return pd.DataFrame()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
