@@ -170,24 +170,29 @@ def home():
 @app.route("/update", methods=["POST"])
 def update():
     argentina = pytz.timezone('America/Argentina/Buenos_Aires')
-
-    datos["temperatura"] = request.form.get("temperatura", "-")
-    datos["humedad"] = request.form.get("humedad", "-")
-    datos["presion"] = request.form.get("presion", "-")
     datos["fecha"] = datetime.now(argentina).strftime("%d/%m/%Y %H:%M")
 
     try:
+        temperatura = float(request.form.get("temperatura", "-"))
+        humedad = float(request.form.get("humedad", "-"))
+        presion = float(request.form.get("presion", "-"))
+
+        datos["temperatura"] = f"{temperatura:.1f}"
+        datos["humedad"] = f"{humedad:.1f}"
+        datos["presion"] = f"{presion:.1f}"
+
         registro = {
             "hora": datetime.now(argentina).strftime("%H:%M"),
-            "temperatura": float(datos["temperatura"]),
-            "humedad": float(datos["humedad"]),
-            "presion": float(datos["presion"])
+            "temperatura": temperatura,
+            "humedad": humedad,
+            "presion": presion
         }
         historial.append(registro)
-        if len(historial) > 300:
+        if len(historial) > 120:
             historial.pop(0)
+
     except:
-        pass
+        datos["temperatura"] = datos["humedad"] = datos["presion"] = "-"
 
     return "OK"
 
