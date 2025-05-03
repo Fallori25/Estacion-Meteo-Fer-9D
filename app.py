@@ -188,7 +188,7 @@ def update():
             "presion": presion
         }
         historial.append(registro)
-        if len(historial) > 120:
+        if len(historial) > 36:
             historial.pop(0)
 
     except:
