@@ -21,7 +21,7 @@ html_template = """
 <head>
 <title>Monitor Climatico de Fer 9D</title>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<meta http-equiv='refresh' content='10'>
+<meta http-equiv='refresh' content='60'>
 <style>
 body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: center; padding: 20px; margin: 0; }
 .header { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
@@ -152,7 +152,7 @@ canvas { max-width: 100%; margin: 20px auto; }
   }
 
   cargarGraficos();
-  setInterval(cargarGraficos, 60000);
+  setInterval(cargarGraficos, 300000);
 </script>
 
 </body>
