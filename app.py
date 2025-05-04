@@ -38,7 +38,7 @@ canvas { max-width: 100%; margin: 20px auto; }
   </div>
 
   <h1>Monitor Climatico de Fer 9D</h1>
-
+  <div class='card'><div class='dato'>Clima externo: {{ clima_ext }}</div></div>  
   <div class='card'><div class='dato'>Temperatura: {{ temperatura }} &#8451;</div></div>
   <div class='card'><div class='dato'>Humedad: {{ humedad }} %</div></div>
   <div class='card'><div class='dato'>Presión: {{ presion }} hPa</div></div>
@@ -153,8 +153,9 @@ def home():
                                   temperatura=datos["temperatura"],
                                   humedad=datos["humedad"],
                                   presion=datos["presion"],
-                                  fecha=datos["fecha"])
-
+                                  fecha=datos["fecha"],
+                                  clima_ext=obtener_clima())
+    
 @app.route("/update", methods=["POST"])
 def update():
     argentina = pytz.timezone('America/Argentina/Buenos_Aires')
@@ -197,6 +198,28 @@ def api_datos():
         "presiones": presiones
     })
 
+import requests
+
+def obtener_clima():
+    try:
+        api_key =3dbaa3e0d64055e1f66e905dbeff034e# ← reemplazá esto por tu clave real
+        ciudad = "San Miguel de Tucuman,AR"
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
+        r = requests.get(url)
+        data = r.json()
+
+        descripcion = data["weather"][0]["description"].capitalize()
+        temp = data["main"]["temp"]
+        humedad = data["main"]["humidity"]
+        presion = data["main"]["pressure"]
+        viento = data["wind"]["speed"]
+
+        resumen = f"{descripcion} – {temp:.1f} °C – Humedad {humedad}% – Viento {viento} m/s – Presión {presion} hPa"
+        return resumen
+
+    except Exception as e:
+        return "No se pudo obtener el clima externo"
+        
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
 
