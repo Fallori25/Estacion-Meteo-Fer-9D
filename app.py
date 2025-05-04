@@ -35,7 +35,7 @@ canvas { max-width: 100%; margin: 20px auto; }
 <body>
   <div class='header'>
     <div class='mini-card'>San Miguel de Tucumán</div>
-    <div class='mini-card'>{{ fecha }}</div>
+    <div class='mini-card'><span id="reloj">--:--:--</span></div>
   </div>
 
   <h1>Monitor Climatico de Fer 9D</h1>
@@ -76,7 +76,8 @@ canvas { max-width: 100%; margin: 20px auto; }
                 data: data.temperaturas,
                 borderColor: 'red',
                 backgroundColor: 'transparent',
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 2,  // opcional para que no se vean los puntos tan marcados
               }]
             },
             options: {
@@ -104,7 +105,8 @@ canvas { max-width: 100%; margin: 20px auto; }
                 data: data.humedades,
                 borderColor: 'blue',
                 backgroundColor: 'transparent',
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 2,  // opcional para que no se vean los puntos tan marcados
               }]
             },
             options: {
@@ -132,7 +134,8 @@ canvas { max-width: 100%; margin: 20px auto; }
                 data: data.presiones,
                 borderColor: 'green',
                 backgroundColor: 'transparent',
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 2,  // opcional para que no se vean los puntos tan marcados
               }]
             },
             options: {
@@ -153,8 +156,16 @@ canvas { max-width: 100%; margin: 20px auto; }
 
   cargarGraficos();
   setInterval(cargarGraficos, 300000);
-</script>
 
+<script>
+  function actualizarReloj() {
+    const ahora = new Date();
+    const hora = ahora.toLocaleTimeString('es-AR', { hour12: false });
+    document.getElementById('reloj').textContent = hora;
+  }
+  setInterval(actualizarReloj, 1000);
+  actualizarReloj();  // Ejecutar al cargar
+</script>
 </body>
 </html>
 """
@@ -188,7 +199,7 @@ def update():
             "presion": presion
         }
         historial.append(registro)
-        if len(historial) > 36:
+        if len(historial) > 18:
             historial.pop(0)
 
     except:
