@@ -12,16 +12,15 @@ datos = {
     "fecha": "-"
 }
 
-# Historial (últimos 10)
+# Historial para 3 horas con 10 minutos entre puntos: 18 registros
 historial = []
 
-# HTML con 3 gráficos separados
 html_template = """
 <html>
 <head>
 <title>Monitor Climatico de Fer 9D</title>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<meta http-equiv='refresh' content='300'>
+<meta http-equiv='refresh' content='600'>
 <style>
 body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: center; padding: 20px; margin: 0; }
 .header { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
@@ -53,119 +52,97 @@ canvas { max-width: 100%; margin: 20px auto; }
   <h2>Gráfico de Presión</h2>
   <canvas id="graficoPres"></canvas>
 
- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <script>
+    function actualizarReloj() {
+      const ahora = new Date();
+      const hora = ahora.toLocaleTimeString('es-AR', { hour12: false });
+      document.getElementById('reloj').textContent = hora;
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
 
-<script>
-  let gTemp, gHum, gPres;
+    let gTemp, gHum, gPres;
 
-  function cargarGraficos() {
-    fetch('/api/datos')
-      .then(r => r.json())
-      .then(data => {
+    function cargarGraficos() {
+      fetch('/api/datos')
+        .then(r => r.json())
+        .then(data => {
+          // Temperatura
+          if (!gTemp) {
+            gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
+              type: 'line',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Temperatura (°C)',
+                  data: data.temperaturas,
+                  borderColor: 'red',
+                  backgroundColor: 'transparent',
+                  tension: 0.4,
+                  pointRadius: 2
+                }]
+              },
+              options: { responsive: true }
+            });
+          } else {
+            gTemp.data.labels = data.labels;
+            gTemp.data.datasets[0].data = data.temperaturas;
+            gTemp.update();
+          }
 
-        // Temperatura
-        if (!gTemp) {
-          gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
-            type: 'line',
-            data: {
-              labels: data.labels,
-              datasets: [{
-                label: 'Temperatura (°C)',
-                data: data.temperaturas,
-                borderColor: 'red',
-                backgroundColor: 'transparent',
-                tension: 0.4,
-                pointRadius: 2,  // opcional para que no se vean los puntos tan marcados
-              }]
-            },
-            options: {
-              responsive: true,
-              scales: {
-                x: { display: true },
-                y: { display: true }
-              }
-            }
-          });
-        } else {
-          gTemp.data.labels = data.labels;
-          gTemp.data.datasets[0].data = data.temperaturas;
-          gTemp.update();
-        }
+          // Humedad
+          if (!gHum) {
+            gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
+              type: 'line',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Humedad (%)',
+                  data: data.humedades,
+                  borderColor: 'blue',
+                  backgroundColor: 'transparent',
+                  tension: 0.4,
+                  pointRadius: 2
+                }]
+              },
+              options: { responsive: true }
+            });
+          } else {
+            gHum.data.labels = data.labels;
+            gHum.data.datasets[0].data = data.humedades;
+            gHum.update();
+          }
 
-        // Humedad
-        if (!gHum) {
-          gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
-            type: 'line',
-            data: {
-              labels: data.labels,
-              datasets: [{
-                label: 'Humedad (%)',
-                data: data.humedades,
-                borderColor: 'blue',
-                backgroundColor: 'transparent',
-                tension: 0.4,
-                pointRadius: 2,  // opcional para que no se vean los puntos tan marcados
-              }]
-            },
-            options: {
-              responsive: true,
-              scales: {
-                x: { display: true },
-                y: { display: true }
-              }
-            }
-          });
-        } else {
-          gHum.data.labels = data.labels;
-          gHum.data.datasets[0].data = data.humedades;
-          gHum.update();
-        }
+          // Presión
+          if (!gPres) {
+            gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
+              type: 'line',
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: 'Presión (hPa)',
+                  data: data.presiones,
+                  borderColor: 'green',
+                  backgroundColor: 'transparent',
+                  tension: 0.4,
+                  pointRadius: 2
+                }]
+              },
+              options: { responsive: true }
+            });
+          } else {
+            gPres.data.labels = data.labels;
+            gPres.data.datasets[0].data = data.presiones;
+            gPres.update();
+          }
+        });
+    }
 
-        // Presión
-        if (!gPres) {
-          gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
-            type: 'line',
-            data: {
-              labels: data.labels,
-              datasets: [{
-                label: 'Presión (hPa)',
-                data: data.presiones,
-                borderColor: 'green',
-                backgroundColor: 'transparent',
-                tension: 0.4,
-                pointRadius: 2,  // opcional para que no se vean los puntos tan marcados
-              }]
-            },
-            options: {
-              responsive: true,
-              scales: {
-                x: { display: true },
-                y: { display: true }
-              }
-            }
-          });
-        } else {
-          gPres.data.labels = data.labels;
-          gPres.data.datasets[0].data = data.presiones;
-          gPres.update();
-        }
-      });
-  }
-
-  cargarGraficos();
-  setInterval(cargarGraficos, 300000);
-
-<script>
-  function actualizarReloj() {
-    const ahora = new Date();
-    const hora = ahora.toLocaleTimeString('es-AR', { hour12: false });
-    document.getElementById('reloj').textContent = hora;
-  }
-  setInterval(actualizarReloj, 1000);
-  actualizarReloj();  // Ejecutar al cargar
-</script>
+    cargarGraficos();
+    setInterval(cargarGraficos, 600000);  // cada 10 minutos
+  </script>
 </body>
 </html>
 """
@@ -199,7 +176,7 @@ def update():
             "presion": presion
         }
         historial.append(registro)
-        if len(historial) > 18:
+        if len(historial) > 18:  # 3 horas / 10 minutos = 18 registros
             historial.pop(0)
 
     except:
@@ -222,7 +199,6 @@ def api_datos():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
 
 
 
