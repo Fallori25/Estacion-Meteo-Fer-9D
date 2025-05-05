@@ -17,6 +17,7 @@ datos = {
 # Historial para 3 horas con 10 minutos entre puntos: 18 registros
 historial = []
 
+# Traducción de días de la semana
 dias_es = {
     "Monday": "Lunes",
     "Tuesday": "Martes",
@@ -26,6 +27,7 @@ dias_es = {
     "Saturday": "Sábado",
     "Sunday": "Domingo"
 }
+
 def obtener_clima():
     try:
         api_key = "30c0c77be147c38624e7c557f4933ced"
@@ -71,11 +73,12 @@ def obtener_pronostico():
             icono = iconos.get(descripcion, "🌡️")
             max_temp = d["temp"]["max"]
             min_temp = d["temp"]["min"]
-           dias.append(f"<span class='icono'>{icono}</span> {dia} – {max_temp:.0f}°C / {min_temp:.0f}°C – {d['weather'][0]['description'].capitalize()}")
+            dias.append(f"<span class='icono'>{icono}</span> {dia} – {max_temp:.0f}°C / {min_temp:.0f}°C – {d['weather'][0]['description'].capitalize()}")
         return dias
     except Exception as e:
         print("Error al obtener pronóstico:", e)
         return ["No se pudo obtener el pronóstico."]
+
 html_template = """
 <html>
 <head>
@@ -88,17 +91,8 @@ body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: ce
 .mini-card { background-color: red; color: white; padding: 10px 15px; border-radius: 10px; font-size: 1em; font-weight: bold; }
 h1 { color: #2c3e50; font-size: 2em; margin: 0; }
 .card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 500px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
-.dato {
-  font-size: 1.1em;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-}
-.dato::before {
-  font-size: 1.6em;
-}
+.dato { font-size: 1.1em; font-weight: 500; display: flex; align-items: center; gap: 10px; justify-content: center; }
+.dato span.icono { font-size: 2.2em; line-height: 1; }
 canvas { max-width: 100%; margin: 20px auto; }
 .pronostico { margin-top: 40px; }
 </style>
@@ -128,7 +122,7 @@ canvas { max-width: 100%; margin: 20px auto; }
   <div class="pronostico">
     <h2>Pronóstico Extendido</h2>
     {% for dia in pronostico %}
-      <div class='card'><div class='dato'>{{ dia }}</div></div>
+      <div class='card'><div class='dato'>{{ dia | safe }}</div></div>
     {% endfor %}
   </div>
 
@@ -275,4 +269,5 @@ def api_datos():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
