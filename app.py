@@ -17,6 +17,15 @@ datos = {
 # Historial para 3 horas con 10 minutos entre puntos: 18 registros
 historial = []
 
+dias_es = {
+    "Monday": "Lunes",
+    "Tuesday": "Martes",
+    "Wednesday": "Miércoles",
+    "Thursday": "Jueves",
+    "Friday": "Viernes",
+    "Saturday": "Sábado",
+    "Sunday": "Domingo"
+}
 def obtener_clima():
     try:
         api_key = "30c0c77be147c38624e7c557f4933ced"
@@ -57,7 +66,7 @@ def obtener_pronostico():
         for i in range(1, 4):
             d = data["daily"][i]
             dt = datetime.fromtimestamp(d["dt"])
-            dia = dt.strftime("%A")
+            dia = dias_es.get(dt.strftime("%A"), dt.strftime("%A"))
             descripcion = d["weather"][0]["main"]
             icono = iconos.get(descripcion, "🌡️")
             max_temp = d["temp"]["max"]
@@ -79,7 +88,17 @@ body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: ce
 .mini-card { background-color: red; color: white; padding: 10px 15px; border-radius: 10px; font-size: 1em; font-weight: bold; }
 h1 { color: #2c3e50; font-size: 2em; margin: 0; }
 .card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 500px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
-.dato { font-size: 1.5em; font-weight: bold; }
+.dato {
+  font-size: 1.1em;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+.dato::before {
+  font-size: 1.6em;
+}
 canvas { max-width: 100%; margin: 20px auto; }
 .pronostico { margin-top: 40px; }
 </style>
