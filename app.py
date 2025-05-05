@@ -20,7 +20,7 @@ historial = []
 
 def obtener_clima():
     try:
-        api_key = "TU_API_KEY"  # ← Reemplazar por tu API key real
+        api_key = "3dbaa3e0d64055e1f66e905dbeff034e"  # ← Reemplazar por tu API key real
         ciudad = "San Miguel de Tucuman,AR"
         url = f"http://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
         r = requests.get(url)
