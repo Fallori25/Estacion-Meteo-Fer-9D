@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template_string, jsonify
 from datetime import datetime
 import pytz
+import requests
 
 app = Flask(__name__)
 
@@ -15,6 +16,28 @@ datos = {
 # Historial para 3 horas con 10 minutos entre puntos: 18 registros
 historial = []
 
+# API clima externo
+
+def obtener_clima():
+    try:
+        api_key = "TU_API_KEY"  # ← Reemplazar por tu API key real
+        ciudad = "San Miguel de Tucuman,AR"
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
+        r = requests.get(url)
+        data = r.json()
+
+        descripcion = data["weather"][0]["description"].capitalize()
+        temp = data["main"]["temp"]
+        humedad = data["main"]["humidity"]
+        presion = data["main"]["pressure"]
+        viento = data["wind"]["speed"]
+
+        resumen = f"{descripcion} – {temp:.1f} °C – Humedad {humedad}% – Viento {viento} m/s – Presión {presion} hPa"
+        return resumen
+    except Exception:
+        return "No se pudo obtener el clima externo"
+
+# HTML
 html_template = """
 <html>
 <head>
@@ -26,8 +49,8 @@ body { font-family: Arial, sans-serif; background-color: #FFB6C1; text-align: ce
 .header { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
 .mini-card { background-color: red; color: white; padding: 10px 15px; border-radius: 10px; font-size: 1em; font-weight: bold; }
 h1 { color: #2c3e50; font-size: 2em; margin: 0; }
-.card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 400px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
-.dato { font-size: 2em; font-weight: bold; }
+.card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 500px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
+.dato { font-size: 1.5em; font-weight: bold; }
 canvas { max-width: 100%; margin: 20px auto; }
 </style>
 </head>
@@ -38,10 +61,11 @@ canvas { max-width: 100%; margin: 20px auto; }
   </div>
 
   <h1>Monitor Climatico de Fer 9D</h1>
-  <div class='card'><div class='dato'>Clima externo: {{ clima_ext }}</div></div>  
+
   <div class='card'><div class='dato'>Temperatura: {{ temperatura }} &#8451;</div></div>
   <div class='card'><div class='dato'>Humedad: {{ humedad }} %</div></div>
   <div class='card'><div class='dato'>Presión: {{ presion }} hPa</div></div>
+  <div class='card'><div class='dato'>Clima externo: {{ clima_ext }}</div></div>
 
   <h2>Gráfico de Temperatura</h2>
   <canvas id="graficoTemp"></canvas>
@@ -53,7 +77,6 @@ canvas { max-width: 100%; margin: 20px auto; }
   <canvas id="graficoPres"></canvas>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-
   <script>
     function actualizarReloj() {
       const ahora = new Date();
@@ -64,12 +87,10 @@ canvas { max-width: 100%; margin: 20px auto; }
     actualizarReloj();
 
     let gTemp, gHum, gPres;
-
     function cargarGraficos() {
       fetch('/api/datos')
         .then(r => r.json())
         .then(data => {
-          // Temperatura
           if (!gTemp) {
             gTemp = new Chart(document.getElementById('graficoTemp').getContext('2d'), {
               type: 'line',
@@ -92,7 +113,6 @@ canvas { max-width: 100%; margin: 20px auto; }
             gTemp.update();
           }
 
-          // Humedad
           if (!gHum) {
             gHum = new Chart(document.getElementById('graficoHum').getContext('2d'), {
               type: 'line',
@@ -115,7 +135,6 @@ canvas { max-width: 100%; margin: 20px auto; }
             gHum.update();
           }
 
-          // Presión
           if (!gPres) {
             gPres = new Chart(document.getElementById('graficoPres').getContext('2d'), {
               type: 'line',
@@ -139,9 +158,8 @@ canvas { max-width: 100%; margin: 20px auto; }
           }
         });
     }
-
     cargarGraficos();
-    setInterval(cargarGraficos, 600000);  // cada 10 minutos
+    setInterval(cargarGraficos, 600000);
   </script>
 </body>
 </html>
@@ -155,12 +173,11 @@ def home():
                                   presion=datos["presion"],
                                   fecha=datos["fecha"],
                                   clima_ext=obtener_clima())
-    
+
 @app.route("/update", methods=["POST"])
 def update():
     argentina = pytz.timezone('America/Argentina/Buenos_Aires')
     datos["fecha"] = datetime.now(argentina).strftime("%d/%m/%Y %H:%M")
-
     try:
         temperatura = float(request.form.get("temperatura", "-"))
         humedad = float(request.form.get("humedad", "-"))
@@ -177,7 +194,7 @@ def update():
             "presion": presion
         }
         historial.append(registro)
-        if len(historial) > 18:  # 3 horas / 10 minutos = 18 registros
+        if len(historial) > 18:
             historial.pop(0)
 
     except:
@@ -198,32 +215,5 @@ def api_datos():
         "presiones": presiones
     })
 
-import requests
-
-def obtener_clima():
-    try:
-        api_key =3dbaa3e0d64055e1f66e905dbeff034e# ← reemplazá esto por tu clave real
-        ciudad = "San Miguel de Tucuman,AR"
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
-        r = requests.get(url)
-        data = r.json()
-
-        descripcion = data["weather"][0]["description"].capitalize()
-        temp = data["main"]["temp"]
-        humedad = data["main"]["humidity"]
-        presion = data["main"]["pressure"]
-        viento = data["wind"]["speed"]
-
-        resumen = f"{descripcion} – {temp:.1f} °C – Humedad {humedad}% – Viento {viento} m/s – Presión {presion} hPa"
-        return resumen
-
-    except Exception as e:
-        return "No se pudo obtener el clima externo"
-        
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-
-
-
-
