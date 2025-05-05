@@ -19,7 +19,7 @@ historial = []
 
 def obtener_clima():
     try:
-        api_key = "3dbaa3e0d64055e1f66e905dbeff034e"  # ← reemplazá esto por tu clave real
+        api_key = "TU_API_KEY"
         ciudad = "San Miguel de Tucuman,AR"
         url = f"https://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
         r = requests.get(url)
@@ -29,12 +29,43 @@ def obtener_clima():
         temp = data["main"]["temp"]
         humedad = data["main"]["humidity"]
         presion = data["main"]["pressure"]
-        viento = data["wind"]["speed"] * 3.6  # Convertir de m/s a km/h
+        viento = data["wind"]["speed"] * 3.6
 
         resumen = f"{descripcion} – {temp:.1f} °C – Humedad {humedad}% – Viento {viento:.1f} km/h – Presión {presion} hPa"
         return resumen
-    except Exception:
+    except:
         return "No se pudo obtener el clima externo"
+
+def obtener_pronostico():
+    try:
+        api_key = "TU_API_KEY"
+        lat = -26.8241
+        lon = -65.2226
+        url = f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,alerts&units=metric&lang=es&appid={api_key}"
+        r = requests.get(url)
+        data = r.json()
+        dias = []
+        iconos = {
+            "Clear": "☀️",
+            "Clouds": "☁️",
+            "Rain": "🌧️",
+            "Drizzle": "🌦️",
+            "Thunderstorm": "⛈️",
+            "Snow": "❄️",
+            "Mist": "🌫️"
+        }
+        for i in range(1, 4):
+            d = data["daily"][i]
+            dt = datetime.fromtimestamp(d["dt"])
+            dia = dt.strftime("%A")
+            descripcion = d["weather"][0]["main"]
+            icono = iconos.get(descripcion, "🌡️")
+            max_temp = d["temp"]["max"]
+            min_temp = d["temp"]["min"]
+            dias.append(f"{icono} {dia} – {max_temp:.0f}°C / {min_temp:.0f}°C – {d['weather'][0]['description'].capitalize()}")
+        return dias
+    except:
+        return ["No se pudo obtener el pronóstico."]
 
 html_template = """
 <html>
@@ -50,6 +81,7 @@ h1 { color: #2c3e50; font-size: 2em; margin: 0; }
 .card { background: linear-gradient(135deg, #00CED1, #c7ecee); padding: 15px; margin: 15px auto; border-radius: 20px; max-width: 500px; box-shadow: 0px 4px 20px rgba(0,0,0,0.1); }
 .dato { font-size: 1.5em; font-weight: bold; }
 canvas { max-width: 100%; margin: 20px auto; }
+.pronostico { margin-top: 40px; }
 </style>
 </head>
 <body>
@@ -73,6 +105,13 @@ canvas { max-width: 100%; margin: 20px auto; }
 
   <h2>Gráfico de Presión</h2>
   <canvas id="graficoPres"></canvas>
+
+  <div class="pronostico">
+    <h2>Pronóstico Extendido</h2>
+    {% for dia in pronostico %}
+      <div class='card'><div class='dato'>{{ dia }}</div></div>
+    {% endfor %}
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
   <script>
@@ -170,7 +209,8 @@ def home():
                                   humedad=datos["humedad"],
                                   presion=datos["presion"],
                                   fecha=datos["fecha"],
-                                  clima_ext=obtener_clima())
+                                  clima_ext=obtener_clima(),
+                                  pronostico=obtener_pronostico())
 
 @app.route("/update", methods=["POST"])
 def update():
