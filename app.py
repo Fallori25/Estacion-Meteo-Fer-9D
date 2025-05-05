@@ -38,7 +38,7 @@ def obtener_clima():
 
 def obtener_pronostico():
     try:
-        api_key = "TU_API_KEY"
+        api_key = "eaee793d502b18bbcab12b6a7bbe664d"
         lat = -26.8241
         lon = -65.2226
         url = f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,alerts&units=metric&lang=es&appid={api_key}"
