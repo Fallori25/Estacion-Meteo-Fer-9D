@@ -2,6 +2,7 @@ from flask import Flask, request, render_template_string, jsonify
 from datetime import datetime
 import pytz
 import requests
+import os
 
 app = Flask(__name__)
 
@@ -16,13 +17,11 @@ datos = {
 # Historial para 3 horas con 10 minutos entre puntos: 18 registros
 historial = []
 
-# API clima externo
-
 def obtener_clima():
     try:
-        api_key = "3dbaa3e0d64055e1f66e905dbeff034e"  # ← Reemplazar por tu API key real
+        api_key = "TU_API_KEY"  # ← reemplazá esto por tu clave real
         ciudad = "San Miguel de Tucuman,AR"
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
         r = requests.get(url)
         data = r.json()
 
@@ -30,14 +29,13 @@ def obtener_clima():
         temp = data["main"]["temp"]
         humedad = data["main"]["humidity"]
         presion = data["main"]["pressure"]
-        viento = data["wind"]["speed"]
+        viento = data["wind"]["speed"] * 3.6  # Convertir de m/s a km/h
 
-        resumen = f"{descripcion} – {temp:.1f} °C – Humedad {humedad}% – Viento {viento} m/s – Presión {presion} hPa"
+        resumen = f"{descripcion} – {temp:.1f} °C – Humedad {humedad}% – Viento {viento:.1f} km/h – Presión {presion} hPa"
         return resumen
     except Exception:
         return "No se pudo obtener el clima externo"
 
-# HTML
 html_template = """
 <html>
 <head>
@@ -214,8 +212,6 @@ def api_datos():
         "humedades": humedades,
         "presiones": presiones
     })
-
-import os
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
