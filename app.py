@@ -41,7 +41,7 @@ def obtener_pronostico():
         api_key = "30c0c77be147c38624e7c557f4933ced"
         lat = -26.8241
         lon = -65.2226
-        url = f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,alerts&units=metric&lang=es&appid={api_key}"
+        url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,alerts&units=metric&lang=es&appid={api_key}"
         r = requests.get(url)
         data = r.json()
         dias = []
