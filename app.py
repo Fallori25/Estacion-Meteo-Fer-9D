@@ -71,7 +71,7 @@ def obtener_pronostico():
             icono = iconos.get(descripcion, "🌡️")
             max_temp = d["temp"]["max"]
             min_temp = d["temp"]["min"]
-            dias.append(f"{icono} {dia} – {max_temp:.0f}°C / {min_temp:.0f}°C – {d['weather'][0]['description'].capitalize()}")
+           dias.append(f"<span class='icono'>{icono}</span> {dia} – {max_temp:.0f}°C / {min_temp:.0f}°C – {d['weather'][0]['description'].capitalize()}")
         return dias
     except Exception as e:
         print("Error al obtener pronóstico:", e)
