@@ -19,7 +19,7 @@ historial = []
 
 def obtener_clima():
     try:
-        api_key = "3dbaa3e0d64055e1f66e905dbeff034e"
+        api_key = "30c0c77be147c38624e7c557f4933ced"
         ciudad = "San Miguel de Tucuman,AR"
         url = f"https://api.openweathermap.org/data/2.5/weather?q={ciudad}&units=metric&lang=es&appid={api_key}"
         r = requests.get(url)
@@ -38,7 +38,7 @@ def obtener_clima():
 
 def obtener_pronostico():
     try:
-        api_key = "eaee793d502b18bbcab12b6a7bbe664d"
+        api_key = "30c0c77be147c38624e7c557f4933ced"
         lat = -26.8241
         lon = -65.2226
         url = f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,alerts&units=metric&lang=es&appid={api_key}"
